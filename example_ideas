@@ -1,0 +1,3 @@
+This file will contain ideas for examples.
+
+We can fit some kind of model that's a mixture of another model (e.g. GP's). When the number is misspecified, hopefully we see a cloud of red due to two clusters being put together when they shouldn't.
