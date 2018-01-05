@@ -2,6 +2,9 @@ library(shiny)
 require(ggplot2)
 require(penalized)
 
+##TODO: This should be replaced by a package load once this is a package
+source('../frontend_funcs.R')
+
 load('hyperopt_data.RData')
 
 # Define UI for app that draws a histogram ----
@@ -11,25 +14,8 @@ ui <- fluidPage(
   titlePanel("Visual Hyperparameter Optimization"),
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
-    # Sidebar panel for inputs ----
-    sidebarPanel(
-      # Input: Slider for the number of bins ----
-      sliderInput(inputId = "lambda1",
-                  label = "L1 Regularization Coefficient",
-                  min = 0,
-                  max = 20,
-                  step = 0.1,
-                  value = 1),
-
-      # Input: Slider for the number of bins ----
-      sliderInput(inputId = "lambda2",
-                  label = "L2 Regularization Coefficient",
-                  min = 0,
-                  max = 20,
-                  step = 0.1,
-                  value = 1)
-    ),
-
+    # make_inputs creates a sideBarPanel object with the appropriate inputs
+    make_inputs(hyperparams),
     # Main panel for displaying outputs ----
     mainPanel(
       # Output: Histogram ----
@@ -38,10 +24,17 @@ ui <- fluidPage(
   )
 )
 
-# Define server logic required to draw a histogram ----
+# Server logic to fit and visualize the model with the user specified hyperparams
 server <- function(input, output) {
 
   output$distPlot <- renderPlot({
+      ## Set the hyperparameters to their new values.
+      for (i in 1:length(hyperparams)) {
+          hyperparams[[i]][['value']] <- input[[as.character(i)]]
+      }
+
+      #Prepare hyperparams for the fitting function
+      hypers_2_pass <- lapply(hyperparams, function(i) i$value)
 
       ### Out of sample error calculation; 5-fold CV#TODO: Generalize
       #Calculate some things real quick
@@ -58,8 +51,7 @@ server <- function(input, output) {
           y_train <- y[-test_inds]
 
           #Fit the model #TODO: Generalize fitting 
-          fit <- penalized(y_train, X_train, lambda1=input$lambda1, 
-                           lambda2=input$lambda2, model = 'logistic')
+          fit <- get_model_fit(hypers_2_pass, X_train, y_train)
 
           #Evaluate the fit out of sample
           y_pred <- get_predict(fit, X_test)
@@ -67,8 +59,7 @@ server <- function(input, output) {
       }
 
       #Fit the model on all the data#TODO: Generalize fitting 
-      fit <- penalized(y_train, X_train, lambda1=input$lambda1, 
-                       lambda2=input$lambda2, model = 'logistic')
+      fit <- get_model_fit(hypers_2_pass, X, y)
 
       #Get the latent representation of the input space 
       lat_rep <- get_lat_rep(X, fit)

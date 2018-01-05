@@ -15,8 +15,24 @@ X <- matrix(rnorm(n*p), ncol = p)
 beta <- rnorm(p+1)
 y <- as.numeric(pnorm(cbind(1, X) %*% beta + rnorm(n)) > 0.5)
 
-fit <- penalized(y, X, lambda1 = 10)
-predict(fit, X)
+### Define functions for the webserver
+# Fit an elastic net with the defined hyperparams
+fit_elasticnet <- function(hyperparams, X, y) {
+    fit <- penalized(y, X, lambda1=hyperparams$l1, 
+        lambda2=hyperparams$l2, model = 'logistic')
+    return(fit)
+}
 
-remote_run(X = X, y = y, get_model_fit = NULL, get_lat_rep = elasticnet_lat_rep,
-           get_err = get_ae)
+# Scale the dimensions by their corresponding coefficient
+elasticnet_lat_rep <- function(X, fit) X %*% diag(coef(fit, which = 'all')[-1])
+
+# We need to define some properties relating to the model hyperparameters
+hyperparams <- list(
+                    'l1' = list('dispname' = 'L1 Coef', 'type' = 'continuous', 
+                                'min' = 0, 'default' = 1, 'max' = 10),
+                    'l2' = list('dispname' = 'L2 Coef', 'type' = 'continuous', 
+                                'min' = 0, 'default' = 1, 'max' = 10)
+                    )
+
+remote_run(hyperparams = hyperparams, X = X, y = y, get_model_fit = fit_elasticnet, 
+           get_lat_rep = elasticnet_lat_rep, get_err = get_ae)

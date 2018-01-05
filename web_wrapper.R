@@ -6,40 +6,65 @@ require(shiny)
 #' Run the hyperoptim webserver
 #'
 #' Start the server for the hyperparameter optimization web gui to visualize fit of a Machine Learning algorithm on data.
+#' @param hyperparams The hyperparameters associated with the machine learning model. Should be a list of named lists, each sublist representing one hyperparameter. The name of each sublist will be provided to get_model_fit. All sublists should contain a character element $dispname indicating the display name of the hyperparameter and $type which should be one of "continuous", "integer", and "categorical". A continuous hyperparameter can also contain elements "min", the minimum allowable value, which defaults to -Inf, "max", the maximum allowable value, which defaults to +Inf, and "default", the value at initialization, which defaults to 0, or whichever of max and min prevent it from defaulting to 0. An integer parameter has the same elements, but "min" defaults to 0 and "default" defaults to 1 ("max" still defaults to +Inf). A categorical hyperparameter must have a "categories" element, a character vector representing all allowable values.
 #' @param X The "inputs"/"features"/"regressors" of the machine learning model.
 #' @param y The "outputs"/"response"/"regressand" of the machine learning model.
-#' @param get_model_fit A function of the form 'get_model_fit(X,y)' that returns a fitted model object given input data X and a response y. R's built in 'predict' should know what to do with this, as should the 'get_lat_rep' function also passed. 
-#' @param get_lat_rep A function of the form 'get_lat_rep(X, fit)', which takes the input data X and fit, the result of calling 'get_model_fit(X,y)', and returns a latent representation of the data under that model fit.
+#' @param get_model_fit A function of the form 'get_model_fit(hyperparams,X,y)' that returns a fitted model object defined by 'hyperparams' given input data X and a response y. 'hyperparams' will be a list containing elements of the same name as the sublists passed to hyperparams. get_predict should know what to do with this, as should the 'get_lat_rep' function also passed. 
+#' @param get_lat_rep A function of the form 'get_lat_rep(X, fit)', which takes the input data X and fit, the result of calling 'get_model_fit(X,y)', and returns a latent representation of the data under that model fit. Defaults to the identity function on its first parameter, just returning X.
 #' @param get_err A function of the form 'get_err(y_true, y_pred)' which, given a vector y_true containing true outcomes and a corresponding vector of equal length y_pred containing predictions for those values will return a scalar indicating how 'good' the predictions were in some sense. For built in options, see mae_func for continuous data. 
 #' @param get_predict A function of the form 'get_predict(fit, X)', which takes a fitted model object from 'fit <- get_model_fit(X,y)' as well as locations at which to predict X, a matrix, and returns predictions of length nrow(X). Defaults to R's 'predict' generic.
 #' @return Does not return a value, is used for its side effect of starting a webserver
-remote_run <- function(X, y, get_model_fit, get_lat_rep, get_err, 
+remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, 
                        get_predict = predict) {
 
+    #Set param defaults
+    if (missing(get_lat_rep)) {
+        get_lat_rep <- function(X, fit) X
+    }
+
+    ## Parse Hyperparameters
+    for (i in 1:length(hyperparams)) {
+        param <- hyperparams[[i]]
+        if (param$type == 'continuous') {
+            #Detect the values that have been set
+            can_have <- c('min', 'max', 'default')
+            defaults <- list('min' = -Inf, 'max' = Inf, 'default' = 0)
+            does_have <- can_have %in% names(param)
+
+            #Set ddefault values
+            for (toset in can_have[!does_have]) {
+                param[[toset]] <- defaults[[toset]]
+            }
+        } else if (param$type == 'integer') {
+            stop("not yet implemented")#TODO: Implement
+        } else if (param$type == 'categorical') {
+            stop("not yet implemented")#TODO: Implement
+        } else {
+            if (!is.null(param$dispname)) {
+                stop(paste('Unrecognized \'type\', should be one of \'continuous\', 
+                           \'integer\', or \'categorical\' in hyperparam', 
+                           param$dispname))
+            } else {
+                stop('Unrecognized \'type\', should be one of \'continuous\', 
+                     \'integer\', or \'categorical\' in parameter without dispname')
+            }
+        }
+
+        #Initialize it at its default value, and give it back to the list
+        param$value <- param$default
+        hyperparams[[i]] <- param
+    }
+
+
     #Save the user's specifications to a file in the webserver's directory
-    save(X, y, get_model_fit, get_lat_rep, get_err, get_predict, 
+    save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, 
          file='./webhyperopt/hyperopt_data.RData')
 
     #This function starts the actual webserver
     runApp('./webhyperopt/')
 }
 
-#' A function which returns a latent representation for GLM data.
-#'
-#' Suitable in general for models in which there is one model parameter associated with each input dimension: simply scale the input dimension of X by the parameter value.
-#' 
-#' @param X The "inputs"/"features"/"regressors" of the machine learning model.
-#' @param fit A fitted model object, the result of 'get_model_fit' generally, but the result of 'glm' in this case.
-glm_lat_rep <- function(X, fit) X %*% diag(coef(fit)[-1])
-
-
-#' A modificaiton of glm_lat_rep for the penalized function from the penalized pacakge. 
-#'
-#' @param X The "inputs"/"features"/"regressors" of the machine learning model.
-#' @param fit A fitted model object, the result of 'get_model_fit' generally, but the result of 'penalized' in this case.
-elasticnet_lat_rep <- function(X, fit) X %*% diag(coef(fit, which = 'all')[-1])
-
-#' The SE error function.
+#' The squared error function.
 #'
 #' Give the squared error of predictions given the truth. Probably makes most sense to use on continuous data.
 #' @param y_true The true response values, a numeric vector.
@@ -58,7 +83,7 @@ get_se <- function(y_true, y_pred) {
     return((y_true - y_pred)^2)
 }
 
-#' The AE error function.
+#' The absolute error function.
 #'
 #' Give the absolute error of predictions given the truth. Probably makes most sense to use on continuous data, but can be reasonable for data taking values, e.g. 0 and 1 only.
 #' @param y_true The true response values, a numeric vector.
