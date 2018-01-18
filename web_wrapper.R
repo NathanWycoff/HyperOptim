@@ -6,9 +6,9 @@ require(shiny)
 #' Run the hyperoptim webserver
 #'
 #' Start the server for the hyperparameter optimization web gui to visualize fit of a Machine Learning algorithm on data.
-#' @param hyperparams The hyperparameters associated with the machine learning model. Should be a list of named lists, each sublist representing one hyperparameter. The name of each sublist will be provided to get_model_fit. All sublists should contain a character element $dispname indicating the display name of the hyperparameter and $type which should be one of "continuous", "integer", and "categorical". A continuous hyperparameter can also contain elements "min", the minimum allowable value, which defaults to -Inf, "max", the maximum allowable value, which defaults to +Inf, and "default", the value at initialization, which defaults to 0, or whichever of max and min prevent it from defaulting to 0. An integer parameter has the same elements, but "min" defaults to 0 and "default" defaults to 1 ("max" still defaults to +Inf). A categorical hyperparameter must have a "categories" element, a character vector representing all allowable values.
+#' @param hyperparams The hyperparameters associated with the machine learning model. Should be a list of named lists, each sublist representing one hyperparameter. The name of each sublist will be provided to get_model_fit. All sublists should contain a character element $dispname indicating the display name of the hyperparameter and $type which should be one of "continuous", "integer", and "categorical". A continuous hyperparameter can also contain elements "min", the minimum allowable value, which defaults to -Inf, "max", the maximum allowable value, which defaults to +Inf, "step", a natural increment/decerment amount, and "default", the value at initialization, which defaults to 0, or whichever of max and min prevent it from defaulting to 0. An integer parameter has the same elements, but "min" defaults to 0 and "default" defaults to 1 ("max" still defaults to +Inf), and "step" is fixed to 1. A categorical hyperparameter must have a "categories" element, a character vector representing all allowable values.
 #' @param X The "inputs"/"features"/"regressors" of the machine learning model.
-#' @param y The "outputs"/"response"/"regressand" of the machine learning model.
+#' @param y The "outputs"/"response"/"regressand" of the machine learning model. If left empty, this functions assumes the model is unsupervised.
 #' @param get_model_fit A function of the form 'get_model_fit(hyperparams,X,y)' that returns a fitted model object defined by 'hyperparams' given input data X and a response y. 'hyperparams' will be a list containing elements of the same name as the sublists passed to hyperparams. get_predict should know what to do with this, as should the 'get_lat_rep' function also passed. 
 #' @param get_lat_rep A function of the form 'get_lat_rep(X, fit)', which takes the input data X and fit, the result of calling 'get_model_fit(X,y)', and returns a latent representation of the data under that model fit. Defaults to the identity function on its first parameter, just returning X.
 #' @param get_err A function of the form 'get_err(y_true, y_pred)' which, given a vector y_true containing true outcomes and a corresponding vector of equal length y_pred containing predictions for those values will return a scalar indicating how 'good' the predictions were in some sense. For built in options, see mae_func for continuous data. 
@@ -21,22 +21,36 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
     if (missing(get_lat_rep)) {
         get_lat_rep <- function(X, fit) X
     }
+    #Set up for unsupervised models
+    if (missing(y)) {
+        y <- NULL
+        get_err <- NULL
+        get_predict <- NULL
+    }
 
     ## Parse Hyperparameters
     for (i in 1:length(hyperparams)) {
         param <- hyperparams[[i]]
         if (param$type == 'continuous') {
             #Detect the values that have been set
-            can_have <- c('min', 'max', 'default')
-            defaults <- list('min' = -Inf, 'max' = Inf, 'default' = 0)
+            can_have <- c('min', 'max', 'default', 'step')
+            defaults <- list('min' = -Inf, 'max' = Inf, 'default' = 0, 'step' = NA)
             does_have <- can_have %in% names(param)
 
-            #Set ddefault values
+            #Set default values
             for (toset in can_have[!does_have]) {
                 param[[toset]] <- defaults[[toset]]
             }
         } else if (param$type == 'integer') {
-            stop("not yet implemented")#TODO: Implement
+            #Detect the values that have been set
+            can_have <- c('min', 'max', 'default')
+            defaults <- list('min' = 0, 'max' = Inf, 'default' = 1, 'step' = 1)
+            does_have <- can_have %in% names(param)
+
+            #Set default values
+            for (toset in can_have[!does_have]) {
+                param[[toset]] <- defaults[[toset]]
+            }
         } else if (param$type == 'categorical') {
             stop("not yet implemented")#TODO: Implement
         } else {

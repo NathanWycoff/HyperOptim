@@ -1,10 +1,10 @@
 library(shiny)
 require(ggplot2)
-require(penalized)
 
 ##TODO: This should be replaced by a package load once this is a package
 source('../frontend_funcs.R')
 
+#Would love to not have to write data to disk and then reread it
 load('hyperopt_data.RData')
 
 # Define UI for app that draws a histogram ----
@@ -37,42 +37,58 @@ server <- function(input, output) {
       hypers_2_pass <- lapply(hyperparams, function(i) i$value)
 
       ### Out of sample error calculation; 5-fold CV#TODO: Generalize
-      #Calculate some things real quick
-      n_folds <- 5
-      n <- nrow(X)
-      folds <- cut(1:n, breaks = n_folds, labels = FALSE)
-      err <- c()
-      for (i in 1:n_folds) {
-          #Train test split
-          test_inds <- which(folds == i)
-          X_test <- X[test_inds,]
-          y_test <- y[test_inds]
-          X_train <- X[-test_inds,]
-          y_train <- y[-test_inds]
+      ## Only used for supervised models
+      if (!is.null(y)) {
+          #Calculate some things real quick
+          n_folds <- 5
+          n <- nrow(X)
+          folds <- cut(1:n, breaks = n_folds, labels = FALSE)
+          err <- c()
+          for (i in 1:n_folds) {
+              #Train test split
+              test_inds <- which(folds == i)
+              X_test <- X[test_inds,]
+              y_test <- y[test_inds]
+              X_train <- X[-test_inds,]
+              y_train <- y[-test_inds]
 
-          #Fit the model #TODO: Generalize fitting 
-          fit <- get_model_fit(hypers_2_pass, X_train, y_train)
+              #Fit the model #TODO: Generalize fitting 
+              fit <- get_model_fit(hypers_2_pass, X_train, y_train)
 
-          #Evaluate the fit out of sample
-          y_pred <- get_predict(fit, X_test)
-          err <- c(err, get_err(y_test, y_pred))
+              #Evaluate the fit out of sample
+              y_pred <- get_predict(fit, X_test)
+              err <- c(err, get_err(y_test, y_pred))
+          }
       }
 
       #Fit the model on all the data#TODO: Generalize fitting 
-      fit <- get_model_fit(hypers_2_pass, X, y)
+      if (!is.null(y)) {
+          fit <- get_model_fit(hypers_2_pass, X, y)
+      } else {
+          fit <- get_model_fit(hypers_2_pass, X)
+      }
 
       #Get the latent representation of the input space 
       lat_rep <- get_lat_rep(X, fit)
 
       #Do dimensionality reduction on the original data 
       to_plot <- data.frame(prcomp(lat_rep)$x[,1:2])
-      to_plot$Error <- err
-      p <- ggplot(to_plot, aes(x=PC1, y=PC2, col=Error)) + geom_point() + 
-            scale_colour_gradient(low = "black", high = "red", limits = c(0,1)) + 
-            ggtitle(paste('Visual Representation of Data in Fit (Mean Error of ',
-                          mean(err), ')', sep = ' '))
-      p
+      if (exists('err')) {
+          to_plot$Error <- err
+      } else {
+          to_plot$Error <- 0.5
+      }
 
+      p <- ggplot(to_plot, aes(x=PC1, y=PC2, col=Error)) + geom_point() + 
+            scale_colour_gradient(low = "black", high = "red", limits = c(0,1)) 
+
+      if (!is.null(y)) {
+            p <- p + ggtitle(paste('Visual Representation of Data in Fit (Mean Error of ',
+                          mean(err), ')', sep = ' '))
+      } else {
+            p <- p + ggtitle('Visual Representation of Data in Fit')
+      }
+      p
   })
 }
 
