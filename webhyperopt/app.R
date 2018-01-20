@@ -2,7 +2,7 @@ library(shiny)
 require(ggplot2)
 
 ##TODO: This should be replaced by a package load once this is a package
-source('../frontend_funcs.R')
+source('frontend_funcs.R')
 
 #Would love to not have to write data to disk and then reread it
 load('hyperopt_data.RData')
