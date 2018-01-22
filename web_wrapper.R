@@ -13,9 +13,15 @@ require(shiny)
 #' @param get_lat_rep A function of the form 'get_lat_rep(X, fit)', which takes the input data X and fit, the result of calling 'get_model_fit(X,y)', and returns a latent representation of the data under that model fit. Defaults to the identity function on its first parameter, just returning X.
 #' @param get_err A function of the form 'get_err(y_true, y_pred)' which, given a vector y_true containing true outcomes and a corresponding vector of equal length y_pred containing predictions for those values will return a scalar indicating how 'good' the predictions were in some sense. For built in options, see mae_func for continuous data. 
 #' @param get_predict A function of the form 'get_predict(fit, X)', which takes a fitted model object from 'fit <- get_model_fit(X,y)' as well as locations at which to predict X, a matrix, and returns predictions of length nrow(X). Defaults to R's 'predict' generic.
+#' @param get_col A function of the form 'get_col(fit, X, y = NULL)' which takes a fitted model object, as well as data (y will be passed even in unsupervised mode) and returns either 1) a numeric vector of length nrow(X) with color values to be passed to a scale (in which case col_scale and scale_vals must also be specified), or 2) a character vector of color names (in which case col_scale and scale_vals are ignored).
+#' @param col_scale A numeric tuple of the form c(low, high) with the low and high value of the color scale. Defaults the minimum and maximum values returned by 'get_col'
+#' @param scale_vals A character tuple of the form c(col1, col2) specifying the extreme values of the color scale.
+#' @param max_disp A scalar numeric indicating how many points should be on the scatterplot at once. If nrow(X) is greater than this value, get_lat_rep will be passed a random sample of X's rows instead of the full X object. This sample remains the same throughout a session, but may change between sessions. get_col will also be passed this subset, but other functions, such as get_model_fit, will still see the full X object.
 #' @return Does not return a value, is used for its side effect of starting a webserver
 remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, 
-                       get_predict = predict) {
+                       get_predict = predict, get_col = NULL, 
+                       col_scale = c('black', 'red'), scale_vals = NULL,
+                       max_disp = 1e4) {
 
     #Set param defaults
     if (missing(get_lat_rep)) {
@@ -26,6 +32,10 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
         y <- NULL
         get_err <- NULL
         get_predict <- NULL
+    }
+    #Default color is just for everything to be black.
+    if (is.null(get_col)) {
+        get_col <- function(fit, X, y) 'black'
     }
 
     ## Parse Hyperparameters
@@ -69,9 +79,17 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
         hyperparams[[i]] <- param
     }
 
+    #Figure out which points we're going to use for the latent representation.
+    if (nrow(X) > max_disp) {
+        to_disp <- sample(1:nrow(X), max_disp)
+        cat('max_disp less than nrow(X), displaying sample of X matrix only')
+    } else {
+        to_disp <- 1:nrow(X)
+    }
 
     #Save the user's specifications to a file in the webserver's directory
-    save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, 
+    save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, get_col,
+         col_scale, scale_vals, to_disp,
          file='./webhyperopt/hyperopt_data.RData')
 
     #This function starts the actual webserver
