@@ -10,23 +10,26 @@ source('./examples/mnist_cnn_data.R')
 ## Fit a neural net on the data
 fit_cnn <- function(hyperparams, X, y) {
     # Put the response in the form keras likes
-    y <- to_categorical(y, 10)
+    q <- length(unique(y))
+    y <- sapply(y, function(i) which(i==unique(y))-1)
+    y <- to_categorical(y, q)
 
     # Set up the model archetecture
     model <- keras_model_sequential()
     for (l in 1:hyperparams$layers) {
         if (l == 1) {
             model %>%
-              layer_dense(units = 256, activation = 'relu', input_shape = c(784)) %>%
+              layer_dense(units = hyperparams$npl, activation = 'relu', 
+                          input_shape = c(784)) %>%
               layer_dropout(rate = 0.4)
         } else {
             model %>%
-              layer_dense(units = 256, activation = 'relu') %>%
+              layer_dense(units = hyperparams$npl, activation = 'relu') %>%
               layer_dropout(rate = 0.4)
         }
     }
     model %>%
-      layer_dense(units = 10, activation = 'softmax')
+      layer_dense(units = q, activation = 'softmax')
 
     # Prepare the model for training
     model %>% compile(
@@ -55,15 +58,17 @@ cnn_lat_rep <- function(X, fit) {
 ## Simply color by class, this may become a default
 cnn_col <- function(fit, X, y) {
     #cols <- rainbow(length(unique(y)))
-    return(as.character(y + 1))
+    return(as.character(y))
 }
-
 
 # We need to define some properties relating to the model hyperparameters
 hyperparams <- list(
                     'layers' = list('dispname' = 'Number of Hidden Layers', 
                                'type' = 'integer', 
-                                'min' = 1, 'default' = 2, 'max' = 5)
+                                'min' = 1, 'default' = 2, 'max' = 5),
+                    'npl' = list('dispname' = 'Nodes Per Layer',
+                                 'type' = 'integer',
+                                 'min' = 1, 'default' = 100, 'max' = 1000)
                     )
 
 remote_run(hyperparams = hyperparams, X = x_train, y = y_train,

@@ -15,3 +15,11 @@ x_test <- array_reshape(x_test, c(nrow(x_test), 784))
 # rescale
 x_train <- x_train / 255
 x_test <- x_test / 255
+
+# only keep data where y = 0,1
+to_keep_train <- y_train==0 | y_train==1
+x_train <-x_train[to_keep_train,]
+y_train <-y_train[to_keep_train]
+to_keep_test <- y_test==0 | y_test==1
+x_test <-x_test[to_keep_test,]
+y_test <-y_test[to_keep_test]

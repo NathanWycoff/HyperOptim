@@ -21,7 +21,7 @@ require(shiny)
 remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, 
                        get_predict = predict, get_col = NULL, 
                        col_scale = c('black', 'red'), scale_vals = NULL,
-                       max_disp = 1e4) {
+                       max_disp = 3e3) {
 
     #Set param defaults
     if (missing(get_lat_rep)) {
@@ -82,7 +82,7 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
     #Figure out which points we're going to use for the latent representation.
     if (nrow(X) > max_disp) {
         to_disp <- sample(1:nrow(X), max_disp)
-        cat('max_disp less than nrow(X), displaying sample of X matrix only')
+        cat('max_disp less than nrow(X), displaying sample of X matrix only\n')
     } else {
         to_disp <- 1:nrow(X)
     }

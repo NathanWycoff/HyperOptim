@@ -90,7 +90,7 @@ server <- function(input, output) {
       p <- p + ggtitle('Visual Representation of Data in Fit') + coord_fixed()
 
       p
-  }, width = 700, height = 700)
+  }, width = 900, height = 900)
 }
 
 # Create Shiny app ----
