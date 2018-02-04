@@ -18,7 +18,7 @@ X <- c()
 mus <- c()
 for (k in 1:K) {
     nk <- floor(n*Pi[k])
-    mu <- rnorm(p,0,3)
+    mu <- rnorm(p,0,6)
     muk <- matrix(rep(mu, nk), ncol = p, byrow = TRUE)
     Xk <- muk + matrix(rnorm(nk*p), ncol = p)
     #yk <- as.numeric(pnorm(cbind(1, Xk) %*% beta + rnorm(nrow(Xk))) > 0.5)

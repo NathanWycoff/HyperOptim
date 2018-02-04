@@ -1,0 +1,46 @@
+-- modify michelle's user study --
+
+We can do two tasks: a supervised one as well as an unsupervised one. As of right now let's say the supervised one is a CNN on MNIST data, and the unsupervised one the multivariate normal mixture, but this may change if I find more interesting examples.
+
+On the day of the study, users who are already familiar with R and machine learning to some extent will bring their own computers. They will be given online instructions with how to download my package and use it. Issues and confusion with installation will be recorded to determine ease of use.
+
+If we can't find a sufficiently homogeneous group of subjects, a pre-survey may be appropriate to determine proficiency with R and machine learning. It would be great to get some undergrads from the CMDA ML class or something so we know that they have a certain background.
+
+They will do the two tasks in a random order such that approximately half of users do each task first. The software will automatically record what configurations were tried, when they were tried, and, in the supervised study, the error rate for that configuration. One of the two tasks will be conducted using our software, the other will be conducted in the base R environment, such that about half of users do the supervised task with our software and the unsupervised one without, and the other half the opposite.
+
+The user will be asked about 1) ease of use 2) conduciveness of understanding 3) ease of installation 4) trust in algorithm's output for each of the two tasks. This survey will be conducted after both tasks are complete.
+
+-- power analysis --
+
+With a signal / noise ratio of 0.5, we would need about 26 participants.
+
+-- which goals have changed since michelle's study? --
+
+Original Research Questions:
+RQ1 Does our Method produce better parameters than a "brute force method" (random search)?
+RQ2 Is our method faster than a random search?
+RQ3 Is our method easier than a random search?
+RQ4 Do users prefer our method or a random search?
+RQ5 How can we refine visual analytics tools based on user experience in this study?
+
+Comments:
+
+RQ1) It's hard to imagine that we would be able to beat a random search in the supervised case, but in the unsupervised case, there's sometimmes no metric at all to beat, so there's no "brute force" comparison. 
+
+RQ2) In terms of speed, our iterative method will be much, much slower in exploring different hyperparameters because we do 1 run, wait for the user, 1 run, and so one, whereas a random search is embarassignly parallelizable.
+
+RQ3) This may be an interesting quetsion for us: on the one hand, we provide a GUI, so the end user does not need to use a CLI (may be useful for some ML users from non-technical backgrounds in industry). On the other hand, in order to take full advantage of it, they need to write R functions.
+
+RQ4) I don't necessarily see these as mutually exclusive, I think that where we're going to have the best argument for our software is in how much understanding the user gains from the procedure. Maybe on of our survey questions can be "How well do you feel you understand why your final hyperparameter configuration is desireable?"
+
+RQ5) Sounds like Michelle had some qualitative questions in her study to examine this, we may as well.
+
+Proposed Research Questions:
+
+RQ1) I really want to focus on determining whether our software enhances understanding compared to the baseline (why are these parameters optimal)? Like I wouldn't even mind if they found the optimal solution with a random search, and simply used to tool to compare that setting to a less optimal setting (at least in the supervised case).
+
+RQ2) That being said, we probably should record how well a random search would do as well as how well they did anyways.
+
+RQ3) I do want to record how difficult the tool is to use. Is the best way to do that to just ask a question on the survey? Or maybe I could record how long it takes for them to get it set up on their computer?
+
+RQ4) just like RQ5 from Michelle's study, I would love to get some qualititative feedback as well.
