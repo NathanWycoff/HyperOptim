@@ -1,0 +1,2 @@
+
+Automatic subsampling may not work when X is a list instead of a matrix

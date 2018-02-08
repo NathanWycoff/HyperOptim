@@ -38,6 +38,18 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
         get_col <- function(fit, X, y) 'black'
     }
 
+    #For maximum generality, let's use a function that allows subsetting for multiple
+    # data types
+    # X is the object to subset
+    # subset is a numeric vecgtor indicating the desired subset
+    gen_subset <- function(X, subset) {
+        if (class(X) == 'matrix') {
+            return(X[subset,])
+        } else if (class(X) == 'list') {
+            return(X[subset])
+        }
+    }
+
     ## Parse Hyperparameters
     for (i in 1:length(hyperparams)) {
         param <- hyperparams[[i]]
@@ -80,16 +92,21 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
     }
 
     #Figure out which points we're going to use for the latent representation.
-    if (nrow(X) > max_disp) {
-        to_disp <- sample(1:nrow(X), max_disp)
-        cat('max_disp less than nrow(X), displaying sample of X matrix only\n')
+    if (class(X) == "matrix") {
+        X_extent <- nrow(X)
     } else {
-        to_disp <- 1:nrow(X)
+        X_extent <- length(X)
+    }
+    if (X_extent > max_disp) {
+        to_disp <- sample(1:X_extent, max_disp)
+        cat('max_disp less than length of X, displaying sample of X only\n')
+    } else {
+        to_disp <- 1:X_extent
     }
 
     #Save the user's specifications to a file in the webserver's directory
     save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, get_col,
-         col_scale, scale_vals, to_disp,
+         col_scale, scale_vals, to_disp, X_extent, gen_subset,
          file='./webhyperopt/hyperopt_data.RData')
 
     #This function starts the actual webserver

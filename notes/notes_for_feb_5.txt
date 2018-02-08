@@ -1,0 +1,12 @@
+
+things to do:
+
+enable keeping track of individual points
+--
+a history bar
+the adjacent parameters
+--
+make a Go! button
+find a high D problem.
+error metric
+literature supporting parameter ranges

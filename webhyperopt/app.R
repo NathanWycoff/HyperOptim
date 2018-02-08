@@ -67,14 +67,13 @@ server <- function(input, output) {
       } else {
           fit <- get_model_fit(hypers_2_pass, X)
       }
-
       #Get the latent representation of the input space 
-      lat_rep <- get_lat_rep(X[to_disp,], fit)
+      lat_rep <- get_lat_rep(gen_subset(x, to_disp), fit)
 
       #Do dimensionality reduction on the original data 
       to_plot <- data.frame(prcomp(lat_rep)$x[,1:2])
 
-      cols <- get_col(fit, X[to_disp,], y[to_disp])
+      cols <- get_col(fit, gen_subset(X, to_disp), y[to_disp])
       if (class(cols) == class(character(0))) {
           #Make the graph if the color scale is discrete
           to_plot$Color <- cols
@@ -93,5 +92,5 @@ server <- function(input, output) {
   }, width = 900, height = 900)
 }
 
-# Create Shiny app ----
+# Start the actual app.
 shinyApp(ui = ui, server = server)
