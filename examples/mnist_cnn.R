@@ -68,7 +68,7 @@ hyperparams <- list(
                                 'min' = 1, 'default' = 2, 'max' = 5),
                     'npl' = list('dispname' = 'Nodes Per Layer',
                                  'type' = 'integer',
-                                 'min' = -Inf, 'default' = 100, 'max' = Inf)
+                                 'min' = 10, 'default' = 100, 'max' = 1000)
                     )
 
 remote_run(hyperparams = hyperparams, X = x_train, y = y_train,

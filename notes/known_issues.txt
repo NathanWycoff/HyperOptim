@@ -1,2 +1,4 @@
 
 Automatic subsampling may not work when X is a list instead of a matrix
+
+When bounds are nonfinite in mnist_cnn.R, we see a bug.
