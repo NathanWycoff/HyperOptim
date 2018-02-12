@@ -68,28 +68,30 @@ server <- function(input, output) {
           fit <- get_model_fit(hypers_2_pass, X)
       }
       #Get the latent representation of the input space 
-      lat_rep <- get_lat_rep(gen_subset(x, to_disp), fit)
+      lat_rep <- get_lat_rep(gen_subset(X, to_disp), fit)
 
       #Do dimensionality reduction on the original data 
-      to_plot <- data.frame(prcomp(lat_rep)$x[,1:2])
+      to_plot <- get_2d(lat_rep)
+      to_plot <- data.frame(to_plot)
+      colnames(to_plot) <- c('X1', 'X2')
 
       cols <- get_col(fit, gen_subset(X, to_disp), y[to_disp])
       if (class(cols) == class(character(0))) {
           #Make the graph if the color scale is discrete
           to_plot$Color <- cols
-          p <- ggplot(to_plot, aes(x=PC1, y=PC2, col=Color)) + geom_point()
+          p <- ggplot(to_plot, aes(x=X1, y=X2, col=Color)) + geom_point()
       } else if (class(cols) == class(numeric(0))) {
           #Make the graph if the color scale is continuous
           to_plot$Color <- cols
-          p <- ggplot(to_plot, aes(x=PC1, y=PC2, col=Color)) + geom_point() + 
-                scale_colour_gradient(low = "black", high = "red", limits = c(0,1)) 
+          p <- ggplot(to_plot, aes(x=X1, y=X2, col=Color)) + geom_point(size=2) + 
+                scale_colour_gradient(low = scale_vals[1], high =scale_vals[2]) 
       } else {
           stop("get_col ought to return a vector of length n of either characters or numbers")
       }
       p <- p + ggtitle('Visual Representation of Data in Fit') + coord_fixed()
 
       p
-  }, width = 900, height = 900)
+  }, width = 500, height = 500)
 }
 
 # Start the actual app.

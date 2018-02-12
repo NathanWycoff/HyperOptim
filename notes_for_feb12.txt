@@ -1,0 +1,5 @@
+Things i'd like to talk about:
+local or webserver?
+lda viz
+idea for neural-net viz / should it be real / simulated?
+how able will the students be to learn abt LDA?

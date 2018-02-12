@@ -8,10 +8,10 @@
 require(LdaFuncs)
 require(mds.methods)
 require(entropy)
-source('web_wrapper.R')
+require(ggplot2)
 
 #Generate data from the LDA model
-set.seed(123456)
+set.seed(12345)
 
 K_trues <- c(20, 40, 60, 80)
 for (K_true in K_trues) {
@@ -28,7 +28,7 @@ for (K_true in K_trues) {
     br <- 10
 
     K_ests <- c(20, 40, 60, 80)
-    png(paste('./images/lda_output_', K_true, '_euc.png', sep = ''))
+    png(paste('./images/lda_output_', K_true, '_ggplot.png', sep = ''))
     par(mfrow=c(2,2))
     for (K_est in K_ests) {
         fit <- wLDA(X, alpha, eta, K_est, V, thresh = 5e-7, iters = 1e4)
@@ -40,6 +40,11 @@ for (K_true in K_trues) {
         cols <- rbPal(br)[as.numeric(cut(cols,breaks = br))]
         plot(data.frame(low_d), main = 
              paste('K est  = ', K_est, '; K true = ', K_true, sep = ''), col = cols)
+        to_plot <- data.frame(low_d)
+        to_plot$Color <- sapply(1:K_est, function(i) KL.plugin(fit$BETA[i,], rep(1/V, V)))
+      p <- ggplot(to_plot, aes(x=X1, y=X2, col=Color)) + geom_point() + 
+            scale_colour_gradient(low = "red", high = "black") 
+        p
     }
     dev.off()
 }

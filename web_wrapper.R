@@ -2,6 +2,11 @@
 #  web_wrapper.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 12.24.2017
 
 require(shiny)
+require(mds.methods)
+
+#TODO: 
+# get_col should default to error rate in supervised things
+
 
 #' Run the hyperoptim webserver
 #'
@@ -13,13 +18,14 @@ require(shiny)
 #' @param get_lat_rep A function of the form 'get_lat_rep(X, fit)', which takes the input data X and fit, the result of calling 'get_model_fit(X,y)', and returns a latent representation of the data under that model fit. Defaults to the identity function on its first parameter, just returning X.
 #' @param get_err A function of the form 'get_err(y_true, y_pred)' which, given a vector y_true containing true outcomes and a corresponding vector of equal length y_pred containing predictions for those values will return a scalar indicating how 'good' the predictions were in some sense. For built in options, see mae_func for continuous data. 
 #' @param get_predict A function of the form 'get_predict(fit, X)', which takes a fitted model object from 'fit <- get_model_fit(X,y)' as well as locations at which to predict X, a matrix, and returns predictions of length nrow(X). Defaults to R's 'predict' generic.
+#' @param get_2d A function of the form get_2d(high_d) which converts a high_d latent representation high_d <- get_lat_rep(X, fit) to a n by 2 matrix suitable for visualization. Defaults to PCA using prcomp.
 #' @param get_col A function of the form 'get_col(fit, X, y = NULL)' which takes a fitted model object, as well as data (y will be passed even in unsupervised mode) and returns either 1) a numeric vector of length nrow(X) with color values to be passed to a scale (in which case col_scale and scale_vals must also be specified), or 2) a character vector of color names (in which case col_scale and scale_vals are ignored).
 #' @param col_scale A numeric tuple of the form c(low, high) with the low and high value of the color scale. Defaults the minimum and maximum values returned by 'get_col'
 #' @param scale_vals A character tuple of the form c(col1, col2) specifying the extreme values of the color scale.
 #' @param max_disp A scalar numeric indicating how many points should be on the scatterplot at once. If nrow(X) is greater than this value, get_lat_rep will be passed a random sample of X's rows instead of the full X object. This sample remains the same throughout a session, but may change between sessions. get_col will also be passed this subset, but other functions, such as get_model_fit, will still see the full X object.
-#' @return Does not return a value, is used for its side effect of starting a webserver
+#' @return Does not return anything; is used for its side effect of starting a webserver
 remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, 
-                       get_predict = predict, get_col = NULL, 
+                       get_predict = predict, get_2d = pca, get_col = NULL, 
                        col_scale = c('black', 'red'), scale_vals = NULL,
                        max_disp = 3e3) {
 
@@ -106,7 +112,7 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
 
     #Save the user's specifications to a file in the webserver's directory
     save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, get_col,
-         col_scale, scale_vals, to_disp, X_extent, gen_subset,
+         col_scale, scale_vals, to_disp, X_extent, gen_subset, get_2d,
          file='./webhyperopt/hyperopt_data.RData')
 
     #This function starts the actual webserver
@@ -149,4 +155,26 @@ get_ae <- function(y_true, y_pred) {
     }
 
     return(abs(y_true - y_pred))
+}
+
+#' Dimensionality Reduction using PCA
+#'
+#' A wrapper for the prcomp builtin, this function, takes an arbitrary column dimension matrix and grabs the first two principle components to create a two dimensional (column) representation. Centers and scales first.
+#' @param high_d A numeric matrix representing the high dimensional data of which a 2D description is desired.
+#' @return A 2-columns matrix with the same number of rows as the input, a two dimensional representation of the input.
+pca <- function(high_d) {
+    pc <- prcomp(high_d)
+    return(pc$x[,1:2])
+}
+
+#' Dimensionality Reduction using MDS with KL divergence
+#'
+#' User Multi-Dimensional Scaling with Kullback-Leibler dissimilarity. Appropriate for creating a 2D representation of vectors that sum to 1.
+#'
+#' @param high_d A numeric matrix representing high dimensional probability distributions. Usually, rows will sum to 1 and have positive entries, but this function will stil return a reasonable value as long as the entries are simply positive. 
+#' @return An nrow(high_d) by 2 matrix giving a 2 dimensional representation of high_d which attempts to preserve distance based on KL divergence.
+kl_mds <- function(high_d) {
+    low_d <- smacof_forward_mds(high_d, weights = rep(1, V), 
+                                  dist.func = KL.plugin)$par
+    return(low_d)
 }

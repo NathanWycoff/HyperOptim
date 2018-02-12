@@ -9,7 +9,7 @@ source('web_wrapper.R')
 
 #Generate data from the LDA model
 set.seed(12345)
-K <- 40#sample(1:10, 1)
+K <- 80#sample(1:10, 1)
 V <- 1000
 M <- 500
 N.mu <- 100
@@ -22,31 +22,17 @@ X <- gen_result$docs
 fit_lda <- function(hyperparams, X) {
     fit <- wLDA(X, alpha, eta, hyperparams$K, V, thresh = 5e-6, iters = 1e4)
     fit$K <- hyperparams$K#TODO: This should be done in my LDA package, not here.
-    #print(good.dist(fit$BETA, KL.plugin))
     return(fit)
 }
 
 # New representation of the data by subtracting its cluster's in the topic space
 lda_lat_rep <- function(X, fit) {
-    ### Get cluster assignments
-    #clusts <- unname(sapply(1:nrow(fit$GAMMA), 
-    #                       function(i) which.max(fit$GAMMA[i,])))
-
-    #Mc <- do.call(rbind, lapply(1:fit$K, function(k) colMeans(fit$GAMMA[clusts==k,])))
-    #Gc <- fit$GAMMA - Mc[clusts,]
-
-    ##Create a centering matrix, and center the data
-    #return(Gc)
     return(fit$BETA)
 }
 
 # Color each point by its most probable topic
 topic_col <- function(fit, X, y = NULL) {
-    #clusts <- unname(sapply(1:nrow(fit$GAMMA), 
-    #                       function(i) which.max(fit$GAMMA[i,])))
-    #col_types <- palette() 
-    #return(col_types[clusts %% length(col_types) + 1])
-    return('black')
+    return(sapply(1:fit$K, function(i) KL.plugin(fit$BETA[i,], rep(1/V, V))))
 }
 
 # We need to define some properties relating to the model hyperparameters
@@ -57,4 +43,5 @@ hyperparams <- list(
                     )
 
 remote_run(hyperparams = hyperparams, X = X, get_model_fit = fit_lda,
-           get_lat_rep = lda_lat_rep, get_col = topic_col)
+           get_lat_rep = lda_lat_rep, get_col = topic_col, get_2d = kl_mds, 
+           scale_vals = c('red', 'black'))
