@@ -11,7 +11,18 @@ source('./examples/norm_mix_data.R')
 
 ### Define functions for the webserver
 fit_mixture <- function(hyperparams, X) {
-    fit <- mvnormalmixEM(X, k = hyperparams$K)
+    K <- hyperparams$K
+
+    #Initialize with K means
+    km <- kmeans(X, K)
+    mu <- km$centers
+    mu <- lapply(1:K, function(i) mu[i,])
+    SIGMAS <- lapply(1:K, function(i) diag(apply(X[km$cluster==i,], 2, var)))
+    lambda <- km$size / sum(km$size)
+
+    #Fit the EM algo
+    fit <- mvnormalmixEM(X, k = hyperparams$K, lambda = lambda, mu = mu, 
+                         sigma = SIGMAS)
     return(fit)
 }
 
@@ -42,7 +53,9 @@ hyperparams <- list(
                                 'min' = 2, 'default' = 2, 'max' = 10)
                     )
 
+log_name <- paste('norm_log_', as.numeric(Sys.time()), '.txt', sep = '')
+
 set.seed(123)
 remote_run(hyperparams = hyperparams, X = X, get_model_fit = fit_mixture,
-           get_lat_rep = mixture_lat_rep, get_col = mixture_col)
-
+           get_lat_rep = mixture_lat_rep, get_col = mixture_col, log = TRUE,
+           log_file = paste('/Users/nathw95/', log_name, sep = ''))

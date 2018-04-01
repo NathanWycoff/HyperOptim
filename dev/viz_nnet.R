@@ -1,14 +1,13 @@
 #!/usr/bin/Rscript
-#  dev/mnist_cnn.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 01.21.2018
+#  viz_nnet.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 02.12.2018
 
-## Example on the MNIST data using an Artificial Convolutional Neural Net
+#Visualize our simulated ann
 require(keras)
 source('web_wrapper.R')
-
-source('./examples/mnist_cnn_data.R')
+load('sim_nn.RData')
 
 ## Fit a neural net on the data
-fit_cnn <- function(hyperparams, X, y) {
+fit_ann <- function(hyperparams, X, y) {
     # Put the response in the form keras likes
     q <- length(unique(y))
     y <- sapply(y, function(i) which(i==unique(y))-1)
@@ -41,7 +40,7 @@ fit_cnn <- function(hyperparams, X, y) {
     # train the model on the training data
     history <- model %>% keras::fit(
       X, y,
-      epochs = 3, batch_size = 128,
+      epochs = 30, batch_size = 128,
       validation_split = 0.2
     )
 
@@ -49,14 +48,14 @@ fit_cnn <- function(hyperparams, X, y) {
 }
 
 ## Get the last hidden layer activations as a latent representation of the images
-cnn_lat_rep <- function(X, fit) {
+ann_lat_rep <- function(X, fit) {
     m <- clone_model(fit)
     pop_layer(m)
     return(predict(m, X))
 }
 
 ## Simply color by class, this may become a default
-cnn_col <- function(fit, X, y) {
+ann_col <- function(fit, X, y) {
     #cols <- rainbow(length(unique(y)))
     return(as.character(y))
 }
@@ -71,6 +70,6 @@ hyperparams <- list(
                                  'min' = 10, 'default' = 100, 'max' = 1000)
                     )
 
-remote_run(hyperparams = hyperparams, X = x_train, y = y_train,
-           get_model_fit = fit_cnn,
-           get_lat_rep = cnn_lat_rep, get_col = cnn_col)
+remote_run(hyperparams = hyperparams, X = nn_X, y = nn_y,
+           get_model_fit = fit_ann,
+           get_lat_rep = ann_lat_rep, get_col = ann_col)

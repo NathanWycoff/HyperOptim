@@ -27,7 +27,12 @@ require(mds.methods)
 remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, 
                        get_predict = predict, get_2d = pca, get_col = NULL, 
                        col_scale = c('black', 'red'), scale_vals = NULL,
-                       max_disp = 3e3) {
+                       max_disp = 3e3, log = FALSE, log_file = '') {
+
+    #If logging, init a file
+    if (log) {
+        cat(Sys.time(), file = log_file, fill = TRUE)
+    }
 
     #Set param defaults
     if (missing(get_lat_rep)) {
@@ -112,7 +117,7 @@ remote_run <- function(hyperparams, X, y, get_model_fit, get_lat_rep, get_err,
 
     #Save the user's specifications to a file in the webserver's directory
     save(hyperparams, X, y, get_model_fit, get_lat_rep, get_err, get_predict, get_col,
-         col_scale, scale_vals, to_disp, X_extent, gen_subset, get_2d,
+         col_scale, scale_vals, to_disp, X_extent, gen_subset, get_2d, log, log_file,
          file='./webhyperopt/hyperopt_data.RData')
 
     #This function starts the actual webserver

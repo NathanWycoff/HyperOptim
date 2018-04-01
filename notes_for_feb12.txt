@@ -1,4 +1,5 @@
 Things i'd like to talk about:
+feature creep
 local or webserver?
 lda viz
 idea for neural-net viz / should it be real / simulated?

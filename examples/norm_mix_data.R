@@ -29,14 +29,14 @@ for (k in 1:K) {
 #Account for drops due to flooring
 n <- nrow(X)
 
-#If we're doing it in 1D or 2D, plot it, otherwise do PCA
-if (p == 1) {
-    plot(X)
-} else if (p==2) {
-    plot(X[,1], X[,2])
-} else {
-    #Visualize it if we want to
-    pca <- princomp(X)
-    plot(pca$scores[,1], pca$scores[,2])
-}
-
+##If we're doing it in 1D or 2D, plot it, otherwise do PCA
+#if (p == 1) {
+#    plot(X)
+#} else if (p==2) {
+#    plot(X[,1], X[,2])
+#} else {
+#    #Visualize it if we want to
+#    pca <- princomp(X)
+#    plot(pca$scores[,1], pca$scores[,2])
+#}
+#

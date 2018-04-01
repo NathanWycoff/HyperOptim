@@ -1,11 +1,19 @@
 #!/usr/bin/Rscript
-#  dev/mnist_cnn.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 01.21.2018
+#  dev/aps_net.R Author "Nathan Wycoff <nathanbrwycoff@gmail.com>" Date 02.19.2018
 
-## Example on the MNIST data using an Artificial Convolutional Neural Net
+## Visualize the APS dataset
 require(keras)
 source('web_wrapper.R')
 
-source('./examples/mnist_cnn_data.R')
+df <- read.csv('./data/aps_processed.csv')
+df <- df[,-1]
+#Subset
+df <- head(df, 1000)
+
+#Split up the data
+X <- array(df[,-1], dim = dim(df))
+
+y <- df[,1]
 
 ## Fit a neural net on the data
 fit_cnn <- function(hyperparams, X, y) {

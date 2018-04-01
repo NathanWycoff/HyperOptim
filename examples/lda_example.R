@@ -9,13 +9,14 @@ source('web_wrapper.R')
 
 #Generate data from the LDA model
 set.seed(12345)
-K <- 80#sample(1:10, 1)
+K <- 20#sample(1:10, 1)
 V <- 1000
 M <- 500
 N.mu <- 100
 eta <- 0.1
 alpha <- 0.1
-gen_result <- gen.lda(K, V, M, N.mu, eta, alpha)
+Pi <- rep(1, V)
+gen_result <- gen.lda(K, V, M, N.mu, Pi, eta, alpha)
 X <- gen_result$docs
 
 #Estimate using the truth
@@ -42,6 +43,9 @@ hyperparams <- list(
                                 'min' = 2, 'default' = 40, 'max' = 100)
                     )
 
+log_name <- paste('lda_log_', as.numeric(Sys.time()), '.txt', sep = '')
+
 remote_run(hyperparams = hyperparams, X = X, get_model_fit = fit_lda,
            get_lat_rep = lda_lat_rep, get_col = topic_col, get_2d = kl_mds, 
+           log = TRUE, log_file = paste('/Users/nathw95/', log_name, sep = ''),
            scale_vals = c('red', 'black'))

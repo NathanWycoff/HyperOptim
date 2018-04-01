@@ -1,0 +1,8 @@
+email steve re: webserver
+precompute things
+add elbowplot to frontend (make new site (just elbow), add elbow)
+
+write vignettes
+
+reserving rooms in torg
+advertise for user studies

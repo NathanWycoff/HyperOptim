@@ -1,0 +1,6 @@
+for next time:
+ask a friend abt my lDA viz
+do some tuning for my LDA viz
+play with supervised examples
+look for good simulating functions
+think about a good user group.

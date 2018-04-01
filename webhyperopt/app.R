@@ -12,6 +12,7 @@ ui <- fluidPage(
 
   # App title ----
   titlePanel("Visual Hyperparameter Optimization"),
+    actionButton("go", "Go"),
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
     # make_inputs creates a sideBarPanel object with the appropriate inputs
@@ -27,14 +28,22 @@ ui <- fluidPage(
 # Server logic to fit and visualize the model with the user specified hyperparams
 server <- function(input, output) {
 
-  output$distPlot <- renderPlot({
+  get_viz <- eventReactive(input$go, {
+
       ## Set the hyperparameters to their new values.
       for (i in 1:length(hyperparams)) {
           hyperparams[[i]][['value']] <- input[[as.character(i)]]
       }
 
+
       #Prepare hyperparams for the fitting function
       hypers_2_pass <- lapply(hyperparams, function(i) i$value)
+
+      ## Record Hyperparameter Combination if logging
+      if (log) {
+          cat(paste(Sys.time(), hypers_2_pass), file = log_file, append = TRUE, 
+              fill = TRUE)
+      }
 
       ### Out of sample error calculation; 5-fold CV#TODO: Generalize
       ## Only used for supervised models
@@ -76,6 +85,13 @@ server <- function(input, output) {
       colnames(to_plot) <- c('X1', 'X2')
 
       cols <- get_col(fit, gen_subset(X, to_disp), y[to_disp])
+      return(list(to_plot = to_plot, cols = cols))
+})
+  output$distPlot <- renderPlot({
+      viz <- get_viz()
+      to_plot <- viz$to_plot
+      cols <- viz$cols
+
       if (class(cols) == class(character(0))) {
           #Make the graph if the color scale is discrete
           to_plot$Color <- cols
