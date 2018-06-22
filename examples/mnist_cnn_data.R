@@ -17,9 +17,9 @@ x_train <- x_train / 255
 x_test <- x_test / 255
 
 # only keep data where y = 0,1
-#to_keep_train <- y_train==4 | y_train==7
-#x_train <-x_train[to_keep_train,]
-#y_train <-y_train[to_keep_train]
-#to_keep_test <- y_test==4 | y_test==7
-#x_test <-x_test[to_keep_test,]
-#y_test <-y_test[to_keep_test]
+to_keep_train <- y_train==0 | y_train==1 | y_train == 4 | y_train == 7
+x_train <-x_train[to_keep_train,]
+y_train <-y_train[to_keep_train]
+to_keep_test <- y_test==0 | y_test==1 | y_est == 4 | y_test == 7
+x_test <-x_test[to_keep_test,]
+y_test <-y_test[to_keep_test]
